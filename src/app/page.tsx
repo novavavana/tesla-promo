@@ -48,7 +48,7 @@ export default function Home() {
         return;
       }
 
-      router.push(`/confirmation?id=${result.id}`);
+      router.push(`/confirmation?id=${result.id}&name=${encodeURIComponent(data.fullName)}`);
     } catch (error) {
       setServerError('A network error occurred. Please try again.');
     }
