@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { turso } from '@/lib/turso';
 import { sendSms } from '@/lib/twilio';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
@@ -23,37 +24,26 @@ export async function POST(req: Request) {
     const { fullName, phoneNumber, emailAddress, residentialAddress } = result.data;
 
     // Check for existing email to prevent duplicates
-    const { data: existingUser } = await supabase
-      .from('applicants')
-      .select('id')
-      .eq('email_address', emailAddress)
-      .single();
+    const existing = await turso.execute({
+      sql: 'SELECT id FROM applicants WHERE email_address = ? LIMIT 1',
+      args: [emailAddress]
+    });
 
-    if (existingUser) {
+    if (existing.rows.length > 0) {
       return NextResponse.json({ error: 'An application with this email already exists.' }, { status: 409 });
     }
 
-    // Insert into Supabase
-    const { data, error } = await supabase
-      .from('applicants')
-      .insert([
-        {
-          full_name: fullName,
-          phone_number: phoneNumber,
-          email_address: emailAddress,
-          residential_address: residentialAddress,
-          consent_timestamp: new Date().toISOString(),
-        }
-      ])
-      .select()
-      .single();
+    const id = crypto.randomUUID();
+    const consentTimestamp = new Date().toISOString();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
-    }
+    // Insert into Turso applicants table
+    await turso.execute({
+      sql: `INSERT INTO applicants (id, full_name, phone_number, email_address, residential_address, consent_timestamp, selection_status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, fullName, phoneNumber, emailAddress, residentialAddress, consentTimestamp, 'Pending Review']
+    });
 
-    // Attempt to send SMS
+    // Attempt to send SMS if configured
     const firstName = fullName.split(' ')[0];
     const announcementDate = process.env.NEXT_PUBLIC_ANNOUNCEMENT_DATE;
     
@@ -65,23 +55,21 @@ export async function POST(req: Request) {
 
     const smsResult = await sendSms(phoneNumber, messageBody);
 
-    // Update status in db
-    await supabase
-      .from('applicants')
-      .update({
-        sms_delivery_status: smsResult.success ? 'sent' : 'failed',
-        sms_message_id: smsResult.sid || null
-      })
-      .eq('id', data.id);
+    if (smsResult.success || smsResult.sid) {
+      await turso.execute({
+        sql: 'UPDATE applicants SET sms_delivery_status = ?, sms_message_id = ? WHERE id = ?',
+        args: [smsResult.success ? 'sent' : 'failed', smsResult.sid || null, id]
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 
-      id: data.id,
+      id,
       smsSent: smsResult.success
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Database error' }, { status: 500 });
   }
 }

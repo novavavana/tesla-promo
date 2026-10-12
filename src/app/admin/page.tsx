@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { LogOut, RefreshCw, Search, Download } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -16,49 +15,71 @@ type Applicant = {
 };
 
 export default function AdminDashboard() {
-  const [session, setSession] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
   
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-      if (session) fetchApplicants();
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchApplicants();
-    });
-
-    return () => subscription.unsubscribe();
+    fetch('/api/admin/login')
+      .then(res => res.json())
+      .then(data => {
+        setIsAuthenticated(!!data.authenticated);
+        setLoading(false);
+        if (data.authenticated) fetchApplicants();
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const fetchApplicants = async () => {
-    const { data, error } = await supabase
-      .from('applicants')
-      .select('*')
-      .order('registration_timestamp', { ascending: false });
-    
-    if (data) setApplicants(data);
+    try {
+      const res = await fetch('/api/admin/applicants');
+      if (res.ok) {
+        const data = await res.json();
+        setApplicants(data.applicants || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await supabase.auth.signInWithPassword({ email, password });
+    setLoginError('');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsAuthenticated(true);
+        fetchApplicants();
+      } else {
+        setLoginError(data.error || 'Invalid credentials');
+      }
+    } catch {
+      setLoginError('Network error');
+    }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await fetch('/api/admin/login', { method: 'DELETE' });
+    setIsAuthenticated(false);
+    setApplicants([]);
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('applicants').update({ selection_status: status }).eq('id', id);
+    await fetch('/api/admin/applicants', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, selectionStatus: status })
+    });
     fetchApplicants();
   };
 
@@ -87,11 +108,16 @@ export default function AdminDashboard() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
-  if (!session) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
           <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
+          {loginError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm text-center">
+              {loginError}
+            </div>
+          )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Email</label>
@@ -100,6 +126,8 @@ export default function AdminDashboard() {
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-black focus:border-black"
+                placeholder="admin@tesla.com"
+                required
               />
             </div>
             <div>
@@ -109,6 +137,7 @@ export default function AdminDashboard() {
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-black focus:border-black"
+                required
               />
             </div>
             <button type="submit" className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800">
