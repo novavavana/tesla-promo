@@ -1,9 +1,9 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -24,6 +24,11 @@ function ConfirmationContent() {
 
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${messageText}`;
 
+  useEffect(() => {
+    // Automatically forward to WhatsApp
+    window.location.href = whatsappUrl;
+  }, [whatsappUrl]);
+
   return (
     <div className="min-h-screen bg-[#111] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -38,8 +43,12 @@ function ConfirmationContent() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-[#1c1c1c] py-10 px-6 shadow-2xl sm:rounded-xl sm:px-10 border border-[#333]">
           <div className="text-center space-y-6">
-            <p className="text-gray-300 font-light leading-relaxed">
-              Thank you for registering your interest. Your details have been recorded successfully. Please wait for the official announcement regarding the applicants selected for the discount.
+            <div className="flex items-center justify-center space-x-2 text-gray-300">
+              <Loader2 className="w-5 h-5 animate-spin text-[#25D366]" />
+              <p className="text-sm font-medium">Opening WhatsApp to confirm your entry...</p>
+            </div>
+            <p className="text-gray-400 text-xs font-light leading-relaxed">
+              Your registration details have been saved. Taking you to WhatsApp right now.
             </p>
             
             {id && (

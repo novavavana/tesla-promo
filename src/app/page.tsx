@@ -48,7 +48,19 @@ export default function Home() {
         return;
       }
 
-      router.push(`/confirmation?id=${result.id}&name=${encodeURIComponent(data.fullName)}`);
+      const refCode = result.id ? result.id.split('-')[0].toUpperCase() : '';
+      const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19193093163';
+      const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
+
+      const messageText = encodeURIComponent(
+        `Hello! I just submitted my registration for the Tesla Discount Promotion.\n` +
+        `Name: ${data.fullName}\n` +
+        `Reference Code: #${refCode}\n\n` +
+        `Please confirm my registration. Thank you!`
+      );
+
+      // Immediately redirect applicant directly to WhatsApp
+      window.location.href = `https://wa.me/${cleanPhone}?text=${messageText}`;
     } catch (error) {
       setServerError('A network error occurred. Please try again.');
     }
