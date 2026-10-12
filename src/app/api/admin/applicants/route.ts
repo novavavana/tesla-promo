@@ -47,3 +47,27 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: error.message || 'Database error' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  if (!(await checkAuth())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing applicant id' }, { status: 400 });
+    }
+
+    await turso.execute({
+      sql: 'DELETE FROM applicants WHERE id = ?',
+      args: [id]
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete applicant error:', error);
+    return NextResponse.json({ error: error.message || 'Database error' }, { status: 500 });
+  }
+}

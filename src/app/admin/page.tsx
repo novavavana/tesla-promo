@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LogOut, RefreshCw, Search, Download, X, Eye } from 'lucide-react';
+import { LogOut, RefreshCw, Search, Download, X, Eye, Trash2 } from 'lucide-react';
 import Papa from 'papaparse';
 
 type Applicant = {
@@ -84,6 +84,32 @@ export default function AdminDashboard() {
       body: JSON.stringify({ id, selectionStatus: status })
     });
     fetchApplicants();
+  };
+
+  const deleteApplicant = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete applicant "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/applicants', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      if (res.ok) {
+        if (selectedApplicant?.id === id) {
+          setSelectedApplicant(null);
+        }
+        fetchApplicants();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete applicant');
+      }
+    } catch {
+      alert('Network error while deleting applicant');
+    }
   };
 
   const retrySms = async (id: string, phone: string, name: string) => {
@@ -234,13 +260,22 @@ export default function AdminDashboard() {
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => setSelectedApplicant(applicant)}
-                        className="inline-flex items-center text-xs font-semibold uppercase tracking-wider text-black bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1 text-gray-500" />
-                        View
-                      </button>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button 
+                          onClick={() => setSelectedApplicant(applicant)}
+                          className="inline-flex items-center text-xs font-semibold uppercase tracking-wider text-black bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 mr-1 text-gray-500" />
+                          View
+                        </button>
+                        <button 
+                          onClick={() => deleteApplicant(applicant.id, applicant.full_name)}
+                          className="inline-flex items-center text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors"
+                          title="Delete applicant"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -332,14 +367,23 @@ export default function AdminDashboard() {
             </div>
 
             <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-              <a
-                href={`https://wa.me/${selectedApplicant.phone_number.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${selectedApplicant.full_name}, regarding your Tesla Promotion application (Ref: #${selectedApplicant.id.split('-')[0].toUpperCase()})...`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-black font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-sm"
-              >
-                Chat on WhatsApp
-              </a>
+              <div className="flex items-center space-x-2">
+                <a
+                  href={`https://wa.me/${selectedApplicant.phone_number.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${selectedApplicant.full_name}, regarding your Tesla Promotion application (Ref: #${selectedApplicant.id.split('-')[0].toUpperCase()})...`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-black font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-sm"
+                >
+                  Chat on WhatsApp
+                </a>
+                <button
+                  onClick={() => deleteApplicant(selectedApplicant.id, selectedApplicant.full_name)}
+                  className="inline-flex items-center justify-center px-3 py-2.5 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Delete
+                </button>
+              </div>
               <button
                 onClick={() => setSelectedApplicant(null)}
                 className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors"
