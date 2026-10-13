@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LogOut, RefreshCw, Search, Download, X, Eye, Trash2 } from 'lucide-react';
+import { LogOut, RefreshCw, Search, Download, X, Eye, Trash2, Mail } from 'lucide-react';
 import Papa from 'papaparse';
 
 type Applicant = {
@@ -14,6 +14,7 @@ type Applicant = {
   consent_timestamp?: string;
   sms_delivery_status: string;
   selection_status: string;
+  confirmation_channel?: string;
 };
 
 export default function AdminDashboard() {
@@ -218,6 +219,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SMS Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selection Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -233,6 +235,15 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(applicant.registration_timestamp).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        applicant.confirmation_channel === 'email' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {applicant.confirmation_channel === 'email' ? 'Email' : 'WhatsApp'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -281,7 +292,7 @@ export default function AdminDashboard() {
                 ))}
                 {filteredApplicants.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       No applicants found.
                     </td>
                   </tr>
@@ -330,12 +341,20 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Registered On</label>
                   <p className="text-gray-700 text-xs">
-                    {new Date(selectedApplicant.registration_timestamp).toLocaleString()}
+                    {new Date(selectedApplicant.registration_timestamp).toLocaleDateString()}
                   </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Preferred Channel</label>
+                  <span className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${
+                    selectedApplicant.confirmation_channel === 'email' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                  }`}>
+                    {selectedApplicant.confirmation_channel === 'email' ? 'Email' : 'WhatsApp'}
+                  </span>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">SMS Delivery</label>
@@ -366,19 +385,26 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
+            <div className="pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <a
                   href={`https://wa.me/${selectedApplicant.phone_number.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${selectedApplicant.full_name}, regarding your Tesla Promotion application (Ref: #${selectedApplicant.id.split('-')[0].toUpperCase()})...`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-black font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-sm"
+                  className="inline-flex items-center justify-center px-3.5 py-2 bg-[#25D366] hover:bg-[#20ba59] text-black font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-sm"
                 >
-                  Chat on WhatsApp
+                  WhatsApp
+                </a>
+                <a
+                  href={`mailto:${selectedApplicant.email_address}?subject=${encodeURIComponent(`Tesla Promotion Registration - #${selectedApplicant.id.split('-')[0].toUpperCase()}`)}&body=${encodeURIComponent(`Hello ${selectedApplicant.full_name},\n\nRegarding your registration for the Tesla Discount Promotion (Ref: #${selectedApplicant.id.split('-')[0].toUpperCase()})...\n\nBest regards,\nPromotion Support Team`)}`}
+                  className="inline-flex items-center justify-center px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-sm"
+                >
+                  <Mail className="w-3.5 h-3.5 mr-1" />
+                  Email
                 </a>
                 <button
                   onClick={() => deleteApplicant(selectedApplicant.id, selectedApplicant.full_name)}
-                  className="inline-flex items-center justify-center px-3 py-2.5 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-1" />
                   Delete
@@ -386,7 +412,7 @@ export default function AdminDashboard() {
               </div>
               <button
                 onClick={() => setSelectedApplicant(null)}
-                className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs uppercase tracking-wider rounded-lg transition-colors"
               >
                 Close
               </button>

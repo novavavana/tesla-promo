@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { turso } from '@/lib/turso';
 import { sendSms } from '@/lib/twilio';
+import { sendConfirmationEmail } from '@/lib/email';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -9,6 +10,7 @@ const registerSchema = z.object({
   phoneNumber: z.string().min(5, "Phone number is required"),
   emailAddress: z.string().email("Invalid email address"),
   residentialAddress: z.string().min(5, "Residential address is required"),
+  confirmationMethod: z.enum(['whatsapp', 'email']).optional().default('whatsapp'),
   consent: z.boolean().refine(val => val === true, "You must consent to continue")
 });
 
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Validation failed', details: result.error.format() }, { status: 400 });
     }
 
-    const { fullName, phoneNumber, emailAddress, residentialAddress } = result.data;
+    const { fullName, phoneNumber, emailAddress, residentialAddress, confirmationMethod } = result.data;
 
     // Check for existing email to prevent duplicates
     const existing = await turso.execute({
@@ -38,9 +40,9 @@ export async function POST(req: Request) {
 
     // Insert into Turso applicants table
     await turso.execute({
-      sql: `INSERT INTO applicants (id, full_name, phone_number, email_address, residential_address, consent_timestamp, selection_status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, fullName, phoneNumber, emailAddress, residentialAddress, consentTimestamp, 'Pending Review']
+      sql: `INSERT INTO applicants (id, full_name, phone_number, email_address, residential_address, consent_timestamp, selection_status, confirmation_channel) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, fullName, phoneNumber, emailAddress, residentialAddress, consentTimestamp, 'Pending Review', confirmationMethod]
     });
 
     // Attempt to send SMS if configured
@@ -62,10 +64,23 @@ export async function POST(req: Request) {
       });
     }
 
+    // Attempt automated confirmation email
+    const refCode = id.split('-')[0].toUpperCase();
+    const emailResult = await sendConfirmationEmail({
+      to: emailAddress,
+      fullName,
+      refCode,
+      phoneNumber,
+      residentialAddress,
+      announcementDate: announcementDate || undefined,
+    });
+
     return NextResponse.json({ 
       success: true, 
       id,
-      smsSent: smsResult.success
+      confirmationMethod,
+      smsSent: smsResult.success,
+      emailSent: emailResult.success
     });
 
   } catch (error: any) {
