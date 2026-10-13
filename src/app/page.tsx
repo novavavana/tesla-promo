@@ -226,6 +226,14 @@ export default function Home() {
                     </div>
                   </label>
                 </div>
+                {selectedMethod === 'email' && (
+                  <p className="text-[11px] text-amber-400/90 mt-2.5 flex items-start bg-amber-500/10 border border-amber-500/20 p-2.5 rounded">
+                    <span className="mr-1.5 flex-shrink-0">⚠️</span>
+                    <span>
+                      <strong>Important:</strong> Confirmation will be emailed to you. If it doesn&apos;t appear in your main inbox, please check your <strong>Spam / Junk</strong> folder.
+                    </span>
+                  </p>
+                )}
               </div>
 
               <div className="pt-4 border-t border-[#333]">

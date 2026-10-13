@@ -97,13 +97,24 @@ function ConfirmationContent() {
 
           {/* Automated Email Notice */}
           {emailParam && (
-            <div className="mb-6 p-4 bg-blue-950/40 border border-blue-500/30 rounded-xl text-xs text-blue-200 flex items-start space-x-3">
-              <Mail className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-white">Automated Confirmation Sent</p>
-                <p className="mt-0.5 text-blue-300 leading-relaxed">
-                  A registration summary and reference code have been dispatched to <strong className="text-white">{emailParam}</strong>. Please check your inbox and spam/junk folder.
-                </p>
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-950/40 to-[#1e2530] border border-blue-500/30 rounded-xl text-xs text-blue-200 space-y-2.5">
+              <div className="flex items-start space-x-3">
+                <Mail className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-white text-sm">Automated Confirmation Sent</p>
+                  <p className="mt-0.5 text-blue-200/90 leading-relaxed">
+                    A registration summary with your reference code was sent to <strong className="text-white">{emailParam}</strong>.
+                  </p>
+                </div>
+              </div>
+              <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-lg text-amber-300 text-[11px] leading-relaxed flex items-start space-x-2">
+                <span className="flex-shrink-0 text-sm">⚠️</span>
+                <div>
+                  <strong>Didn&apos;t see the email in your main feed?</strong>
+                  <p className="mt-0.5 text-amber-200/90">
+                    Please check your <strong>Spam</strong>, <strong>Junk</strong>, or <strong>Promotions</strong> folder. Be sure to mark it as <em>&quot;Not Spam&quot;</em> so you receive the official selection announcements!
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -194,6 +205,13 @@ function ConfirmationContent() {
                     </>
                   )}
                 </button>
+              </div>
+
+              <div className="mt-3 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start space-x-2 text-amber-300 text-[11px] leading-relaxed">
+                <span className="flex-shrink-0">⚠️</span>
+                <span>
+                  <strong>Tip:</strong> If our automated email does not appear in your primary inbox, please check your <strong>Spam / Junk</strong> folder and mark it as <em>&quot;Not Spam&quot;</em>.
+                </span>
               </div>
 
               <div className="mt-2 text-[11px] text-gray-400 text-center sm:text-left">

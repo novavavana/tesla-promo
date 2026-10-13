@@ -193,6 +193,8 @@ function buildPlainTextEmail(params: SendConfirmationEmailParams, supportEmail: 
     `- WhatsApp Support: +${whatsappNumber}`,
     `- Email Support: ${supportEmail}`,
     ``,
+    `IMPORTANT: If this email arrived in your Spam or Junk folder, please mark it as "Not Spam" or add ${supportEmail} to your contacts so you don't miss our announcement updates.`,
+    ``,
     `Thank you for your interest!`,
     ``,
     `--`,
@@ -313,6 +315,10 @@ function buildHtmlEmail(params: SendConfirmationEmailParams, supportEmail: strin
               <p style="margin: 20px 0 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
                 Need help? You can also reply directly to this email at <a href="mailto:${supportEmail}" style="color: #60a5fa; text-decoration: underline;">${supportEmail}</a>
               </p>
+
+              <div style="margin-top: 20px; padding: 12px; background-color: #242016; border: 1px solid #4a3e20; border-radius: 8px; text-align: center; font-size: 11px; color: #fde047; line-height: 1.5;">
+                <strong>Delivery Notice:</strong> If this email arrived in your Spam, Junk, or Promotions folder, please mark it as <em>&quot;Not Spam&quot;</em> or add <span style="text-decoration: underline;">${supportEmail}</span> to your contacts so you don&apos;t miss the official selection announcement!
+              </div>
             </td>
           </tr>
 
