@@ -38,7 +38,7 @@ export default function Home() {
   });
 
   const selectedMethod = watch('confirmationMethod', 'whatsapp');
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19193093163';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19143093163';
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'teslaspaceinnovation34@gmail.com';
 
   const onSubmit = async (data: FormData) => {

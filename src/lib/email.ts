@@ -355,7 +355,7 @@ function buildHtmlEmail(params: SendConfirmationEmailParams, supportEmail: strin
 export async function sendConfirmationEmail(params: SendConfirmationEmailParams): Promise<SendEmailResult> {
   const { to, fullName, refCode } = params;
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'teslaspaceinnovation34@gmail.com';
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19193093163';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19143093163';
   const announcementDate = process.env.NEXT_PUBLIC_ANNOUNCEMENT_DATE;
 
   const subject = `Registration Received - Tesla Discount Promotion (#${refCode})`;

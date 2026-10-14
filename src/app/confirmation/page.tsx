@@ -17,7 +17,7 @@ function ConfirmationContent() {
   const [copiedRef, setCopiedRef] = useState(false);
 
   const announcementDate = process.env.NEXT_PUBLIC_ANNOUNCEMENT_DATE;
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19193093163';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19143093163';
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'teslaspaceinnovation34@gmail.com';
   const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
   const refCode = id ? id.split('-')[0].toUpperCase() : 'PENDING';
