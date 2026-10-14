@@ -38,6 +38,8 @@ export default function Home() {
   });
 
   const selectedMethod = watch('confirmationMethod', 'whatsapp');
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '19193093163';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'teslaspaceinnovation34@gmail.com';
 
   const onSubmit = async (data: FormData) => {
     setServerError(null);
@@ -296,8 +298,8 @@ export default function Home() {
             <div>
               <h3 className="text-gray-200 font-medium tracking-wide mb-4 text-sm uppercase">Contact</h3>
               <p className="text-xs text-gray-500 leading-relaxed">
-                WhatsApp Support: +1 (919) 309-3163<br />
-                Email: teslaspaceinnovation34@gmail.com
+                WhatsApp Support: +{whatsappNumber.replace(/[^0-9]/g, '')}<br />
+                Email: {supportEmail}
               </p>
             </div>
           <div>
